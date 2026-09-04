@@ -1,0 +1,98 @@
+{
+	"info": {
+		"_postman_id": "b6e2f1a4-6d3c-4e9a-9b2f-8f4a1c7e2d10",
+		"name": "Section 2 - API Testing (JSONPlaceholder Posts)",
+		"description": "Validates the POST /posts endpoint of https://jsonplaceholder.typicode.com using Postman test scripts.\n\nAssertions:\n- Status code is 201 Created\n- Response contains an `id` field\n- `title` and `body` in the response match the request payload",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "0"
+	},
+	"item": [
+		{
+			"name": "Create Post",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Status code should be 201 Created",
+							"pm.test(\"Status code is 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"// Parse response body once for reuse in the remaining assertions",
+							"let responseJson;",
+							"pm.test(\"Response body is valid JSON\", function () {",
+							"    responseJson = pm.response.json();",
+							"    pm.expect(responseJson).to.be.an(\"object\");",
+							"});",
+							"",
+							"// 2. Response should contain an id field",
+							"pm.test(\"Response contains an id field\", function () {",
+							"    pm.expect(responseJson).to.have.property(\"id\");",
+							"    pm.expect(responseJson.id).to.not.be.undefined;",
+							"});",
+							"",
+							"// 3. title and body should match the request payload",
+							"pm.test(\"Response title matches request payload\", function () {",
+							"    const requestBody = JSON.parse(pm.request.body.raw);",
+							"    pm.expect(responseJson.title).to.eql(requestBody.title);",
+							"});",
+							"",
+							"pm.test(\"Response body matches request payload\", function () {",
+							"    const requestBody = JSON.parse(pm.request.body.raw);",
+							"    pm.expect(responseJson.body).to.eql(requestBody.body);",
+							"});",
+							"",
+							"pm.test(\"Response userId matches request payload\", function () {",
+							"    const requestBody = JSON.parse(pm.request.body.raw);",
+							"    pm.expect(responseJson.userId).to.eql(requestBody.userId);",
+							"});",
+							"",
+							"// Response time sanity check",
+							"pm.test(\"Response time is under 2000ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Test Post\",\n  \"body\": \"This is a test post.\",\n  \"userId\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/posts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"posts"
+					]
+				},
+				"description": "Sends a POST request to create a new post on JSONPlaceholder's mock REST API."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://jsonplaceholder.typicode.com",
+			"type": "string"
+		}
+	]
+}

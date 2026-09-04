@@ -1,0 +1,13 @@
+{
+	"id": "b0e2f1a4-7d3c-4e9a-9b2f-8f4a1c7e2d20",
+	"name": "JSONPlaceholder",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "https://jsonplaceholder.typicode.com",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment"
+}
