@@ -1,63 +1,67 @@
-# CSharpProblemSolving
+# SeleniumLoginTests
 
-Section 3: C# Problem-Solving Task — determine whether a string contains
-only unique characters, case-insensitive.
+UI automation suite for `https://the-internet.herokuapp.com/login`, built with
+**Selenium WebDriver + xUnit + C#**, following the **Page Object Model (POM)**.
+
+## Prerequisites
+
+- Visual Studio 2022 with .NET SDK 8
+- Google Chrome (latest)
+- (Optional) Postman — not required for this suite, listed per session prerequisites
+
+NuGet packages (already referenced in `SeleniumLoginTests.csproj`, restore on first build):
+
+- Microsoft.NET.Test.Sdk
+- Selenium.WebDriver
+- Selenium.WebDriver.ChromeDriver
+- xunit
+- xunit.runner.visualstudio
 
 ## Project structure
 
 ```
-CSharpProblemSolving/
-├── CSharpProblemSolving.csproj
-├── Solutions/
-│   └── UniqueCharacterChecker.cs   # HasOnlyUniqueCharacters implementation
+SeleniumLoginTests/
+├── SeleniumLoginTests.csproj
+├── Pages/
+│   ├── BasePage.cs          # Shared explicit-wait helpers
+│   ├── LoginPage.cs         # Locators + actions for /login
+│   └── SecureAreaPage.cs    # Locators + actions for /secure (post-login)
 └── Tests/
-    └── UniqueCharacterCheckerTests.cs
+    ├── ChromeDriverFixture.cs  # Creates/disposes a ChromeDriver per test
+    └── LoginTests.cs           # Test scenarios
 ```
 
 ## How to run
 
+**Visual Studio:**
+1. Open `SeleniumLoginTests.csproj` (or a solution containing it).
+2. Build the solution (NuGet packages restore automatically).
+3. Open **Test Explorer** (`Test` → `Test Explorer`) and click **Run All**.
+
+**CLI:**
 ```bash
 dotnet restore
 dotnet test
 ```
 
-Or in Visual Studio 2022: open the `.csproj`, build, then **Test Explorer → Run All**.
+## Test scenarios covered
 
-## Approach
+| Test | Scenario | Expected result |
+|---|---|---|
+| `Login_WithValidCredentials_DisplaysSuccessMessage` | `tomsmith` / `SuperSecretPassword!` | Redirected to secure area, "You logged into a secure area!" shown |
+| `Login_WithInvalidPassword_DisplaysErrorMessage` | Valid username, wrong password | "Your password is invalid!" shown |
+| `Login_WithUnknownUsername_DisplaysErrorMessage` | Unknown username | "Your username is invalid!" shown |
+| `Login_WithEmptyCredentials_DisplaysErrorMessage` | Empty fields, click Login | "Your username is invalid!" shown |
 
-`HasOnlyUniqueCharacters` uses a **bit-vector (bitmask)** built from two
-`ulong` values — a 128-bit lookup table covering ASCII code points 0-127.
-For each character:
+## Design notes
 
-1. Case-fold it (`char.ToLowerInvariant`).
-2. Compute its bit position and check whether that bit is already set.
-3. If set → a duplicate was found → return `false` immediately.
-4. Otherwise set the bit and continue.
-
-This satisfies both constraints from the brief:
-
-- **No `HashSet`/`Dictionary`/other collection** — only two fixed-size
-  primitive `ulong` fields are used as the "seen" tracker, so extra space
-  is O(1) regardless of input length (as opposed to a `bool[128]` array,
-  which is still technically a data structure).
-- **Optimised for performance** — O(n) time, O(1) space, and a
-  **pigeonhole-principle short-circuit**: since ASCII only has 128 distinct
-  values, any input longer than 128 characters is mathematically
-  guaranteed to contain a duplicate and is rejected in O(1) without
-  scanning it at all.
-
-**Scope note:** the checker supports the full extended-ASCII range
-(0-127), which covers English letters, digits, punctuation, and
-whitespace — everything in the task's examples. A character outside that
-range throws `ArgumentOutOfRangeException` rather than silently producing
-a wrong answer; extending to full Unicode would need a larger table and
-wasn't asked for here.
-
-## Test coverage
-
-| Category | What's covered |
-|---|---|
-| Given Examples | The exact three cases from the brief (`hello` → false, `world` → true, `Adam` → false) |
-| Case Insensitivity | `Aa`, `aA`, `AaBb`, `AbCdEf` |
-| Edge Cases | Empty string, single character, `null` input, all-same-character, spaces/punctuation, repeated whitespace |
-| Performance | The >128-character short-circuit, and a 102-character string proving long-but-under-threshold input is still evaluated correctly (not just short-circuited) |
+- **Page Object Model**: `LoginPage` and `SecureAreaPage` own all locators and
+  interactions; `LoginTests` only orchestrates and asserts — no raw
+  `IWebElement`/`By` calls in the test class.
+- **Explicit waits only**: `BasePage` wraps `WebDriverWait` so tests aren't
+  flaky from implicit-wait/explicit-wait mixing.
+- **Isolation**: each test gets its own `ChromeDriver` instance (created in
+  the constructor, disposed in `Dispose`), so no state or cookies leak
+  between tests.
+- **Headless/CI**: uncomment the `--headless=new` argument in
+  `ChromeDriverFixture` to run in CI pipelines without a visible browser.
